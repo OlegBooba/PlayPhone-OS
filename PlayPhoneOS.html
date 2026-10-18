@@ -1,0 +1,1363 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>PlayPhone OS</title>
+<style>
+:root{
+  --bg0:#03050d; --bg1:#0a1230; --bg2:#141e4a;
+  --accent:#4fc3f7; --accent2:#7c4dff;
+  --text:#e8eaf6; --dim:#7b86b0;
+  --line:rgba(120,150,220,.18);
+  --panel:rgba(10,16,40,.92);
+  --radius:14px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{width:100%;height:100%;overflow:hidden;background:#000;color:var(--text);
+  font-family:-apple-system,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;
+  user-select:none;-webkit-user-select:none;-webkit-tap-highlight-color:transparent;
+  touch-action:manipulation;}
+.hidden{display:none!important}
+.screen{position:fixed;inset:0}
+
+/* ============ BOOT ============ */
+#boot{display:flex;flex-direction:column;align-items:center;justify-content:center;
+  background:radial-gradient(circle at 50% 40%,#0d1840 0%,#03050d 70%);z-index:1000}
+.boot-logo{font-size:clamp(28px,6vw,64px);font-weight:200;letter-spacing:.15em;
+  color:#fff;animation:fadeIn 1.2s ease}
+.boot-logo span{color:var(--accent);font-weight:600}
+.boot-sub{margin-top:8px;color:var(--dim);font-size:clamp(10px,1.5vw,14px);letter-spacing:.3em}
+.boot-bar{margin-top:40px;width:min(320px,60vw);height:3px;background:rgba(255,255,255,.08);border-radius:2px;overflow:hidden}
+#boot-progress{height:100%;width:0%;background:linear-gradient(90deg,var(--accent2),var(--accent));
+  transition:width .3s ease;box-shadow:0 0 12px var(--accent)}
+@keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+
+/* ============ MAIN ============ */
+#main{background:linear-gradient(160deg,#0a1230 0%,#03050d 60%,#0a0f22 100%);display:flex;flex-direction:column}
+#topbar{display:flex;justify-content:space-between;align-items:center;
+  padding:clamp(8px,1.5vh,16px) clamp(16px,3vw,40px);font-size:clamp(11px,1.5vw,14px);color:var(--dim)}
+.brand{font-weight:600;letter-spacing:.08em;color:#fff}
+.ver{color:var(--accent);margin-left:8px;font-size:.8em}
+.topbar-right{display:flex;gap:clamp(10px,2vw,24px);align-items:center}
+#user-chip{background:rgba(79,195,247,.12);padding:4px 12px;border-radius:20px;color:var(--accent)}
+#res-info{color:var(--dim)}
+
+/* XMB */
+#xmb{flex:1;display:flex;flex-direction:column;justify-content:center;overflow:hidden;
+  padding:0 clamp(16px,4vw,80px)}
+#cats{display:flex;gap:clamp(14px,2.5vw,32px);justify-content:center;align-items:center;
+  margin-bottom:clamp(20px,4vh,50px);flex-wrap:wrap}
+.cat{width:clamp(50px,8vh,84px);height:clamp(50px,8vh,84px);border-radius:18px;
+  display:flex;align-items:center;justify-content:center;font-size:clamp(22px,4vh,38px);
+  background:rgba(255,255,255,.04);border:1px solid var(--line);cursor:pointer;
+  transition:all .25s ease;position:relative}
+.cat:hover{background:rgba(255,255,255,.08);transform:scale(1.05)}
+.cat.active{background:linear-gradient(135deg,rgba(124,77,255,.3),rgba(79,195,247,.3));
+  border-color:var(--accent);box-shadow:0 0 24px rgba(79,195,247,.35);transform:scale(1.12)}
+.cat-label{position:absolute;bottom:-22px;font-size:10px;color:var(--dim);white-space:nowrap}
+.cat.active .cat-label{color:var(--accent)}
+
+#items{display:flex;flex-direction:column;gap:8px;overflow-y:auto;
+  max-height:50vh;padding:8px 4px;scrollbar-width:thin}
+.item{display:flex;align-items:center;gap:14px;padding:clamp(10px,1.6vh,16px) clamp(14px,2vw,22px);
+  background:rgba(255,255,255,.03);border:1px solid var(--line);border-radius:12px;
+  cursor:pointer;transition:all .2s ease;max-width:640px;margin:0 auto;width:100%}
+.item:hover,.item.active{background:linear-gradient(90deg,rgba(79,195,247,.15),rgba(124,77,255,.08));
+  border-color:var(--accent);transform:translateX(4px)}
+.item-icon{font-size:clamp(18px,3vh,28px);width:1.4em;text-align:center}
+.item-info{flex:1;min-width:0}
+.item-title{font-size:clamp(13px,1.8vw,16px);color:#fff;font-weight:500}
+.item-sub{font-size:clamp(10px,1.2vw,12px);color:var(--dim);margin-top:2px}
+.item-action{font-size:11px;color:var(--accent)}
+
+#hint{text-align:center;padding:10px;font-size:clamp(10px,1.3vw,12px);color:var(--dim);
+  border-top:1px solid var(--line);background:rgba(0,0,0,.3)}
+
+/* ============ APP OVERLAY ============ */
+#app-overlay{position:fixed;inset:0;background:linear-gradient(160deg,#0a1230,#03050d);
+  z-index:200;display:flex;flex-direction:column;animation:slideUp .3s ease}
+@keyframes slideUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:none}}
+.app-header{display:flex;align-items:center;gap:14px;padding:clamp(10px,1.6vh,16px) clamp(16px,3vw,40px);
+  border-bottom:1px solid var(--line);background:rgba(0,0,0,.3);font-size:clamp(14px,2vw,18px)}
+.back-btn{background:rgba(79,195,247,.15);border:1px solid var(--accent);color:var(--accent);
+  padding:8px 16px;border-radius:8px;cursor:pointer;font-size:13px;transition:all .2s}
+.back-btn:hover{background:rgba(79,195,247,.3)}
+#app-title{font-weight:600}
+#app-body{flex:1;overflow-y:auto;padding:clamp(16px,3vw,40px)}
+
+/* ============ GAME OVERLAY ============ */
+#game-overlay{position:fixed;inset:0;background:#000;z-index:300;display:flex;flex-direction:column}
+.game-header{display:flex;align-items:center;gap:12px;padding:8px 16px;background:#0a0f22;
+  border-bottom:1px solid var(--line);font-size:13px;z-index:5}
+#game-title{flex:1;color:#fff}
+.game-actions{display:flex;gap:8px}
+.game-actions button{background:rgba(79,195,247,.15);border:1px solid var(--accent);color:var(--accent);
+  width:40px;height:36px;border-radius:8px;font-size:18px;cursor:pointer}
+.game-actions button.on{background:var(--accent);color:#000}
+#game-stage{flex:1;position:relative;overflow:hidden}
+#game-frame{width:100%;height:100%;border:0;background:#fff}
+#v-cursor{position:absolute;width:26px;height:26px;border-radius:50%;
+  background:radial-gradient(circle,rgba(79,195,247,.95),rgba(79,195,247,.2));
+  border:2px solid #fff;box-shadow:0 0 12px rgba(79,195,247,.9);
+  transform:translate(-50%,-50%);pointer-events:none;z-index:20;transition:transform .05s linear}
+
+/* virtual keyboard */
+#v-keyboard{position:absolute;bottom:0;left:0;right:0;background:rgba(10,16,40,.97);
+  border-top:1px solid var(--accent);padding:8px;z-index:30;
+  display:grid;grid-template-columns:repeat(10,1fr);gap:5px;
+  animation:slideUp .2s ease}
+.vk{background:rgba(255,255,255,.08);border:1px solid var(--line);color:#fff;
+  border-radius:6px;padding:10px 0;font-size:14px;cursor:pointer;text-align:center}
+.vk:active{background:var(--accent);color:#000}
+.vk.wide{grid-column:span 2}
+.vk.space{grid-column:span 5}
+.vk.enter{background:rgba(124,77,255,.4);grid-column:span 2}
+.vk.back{background:rgba(255,80,80,.3)}
+
+/* ============ COMMON APP STYLES ============ */
+.app-page h1{font-size:clamp(20px,3vw,28px);margin-bottom:16px;color:#fff;font-weight:600}
+.app-page h2{font-size:clamp(15px,2vw,20px);margin:18px 0 10px;color:var(--accent);font-weight:500}
+.app-page p{line-height:1.6;color:var(--text);margin-bottom:10px;font-size:clamp(13px,1.6vw,15px)}
+.app-page code{background:rgba(79,195,247,.12);padding:2px 6px;border-radius:4px;font-family:monospace;color:var(--accent)}
+.btn{display:inline-flex;align-items:center;gap:8px;background:rgba(79,195,247,.15);
+  border:1px solid var(--accent);color:var(--accent);padding:10px 20px;border-radius:10px;
+  cursor:pointer;font-size:clamp(12px,1.5vw,14px);transition:all .2s;margin:4px 4px 4px 0}
+.btn:hover{background:rgba(79,195,247,.3)}
+.btn.primary{background:linear-gradient(135deg,var(--accent2),var(--accent));color:#fff;border:none}
+.btn.danger{background:rgba(255,80,80,.15);border-color:#ff5252;color:#ff5252}
+.setting-group{display:flex;justify-content:space-between;align-items:center;
+  padding:14px 18px;background:rgba(255,255,255,.03);border:1px solid var(--line);
+  border-radius:10px;margin-bottom:10px;max-width:720px}
+.setting-group label{color:var(--text);font-size:14px}
+.setting-group select,.setting-group input[type=text]{
+  background:rgba(0,0,0,.5);border:1px solid var(--line);color:var(--text);
+  padding:8px 12px;border-radius:8px;font-size:13px;min-width:180px}
+.setting-group input[type=checkbox]{width:20px;height:20px;accent-color:var(--accent)}
+.fm-toolbar{display:flex;gap:10px;align-items:center;margin-bottom:14px;flex-wrap:wrap}
+.fm-path{flex:1;background:rgba(0,0,0,.4);padding:10px 16px;border-radius:8px;
+  font-family:monospace;font-size:13px;color:var(--accent);min-width:180px}
+.fm-list{display:flex;flex-direction:column;gap:6px;max-width:800px}
+.fm-item{display:flex;align-items:center;gap:12px;padding:12px 16px;
+  background:rgba(255,255,255,.03);border:1px solid var(--line);border-radius:10px;
+  cursor:pointer;transition:all .15s;font-size:14px}
+.fm-item:hover{background:rgba(79,195,247,.12);border-color:var(--accent)}
+.fm-item .ico{font-size:20px}
+.fm-item .meta{margin-left:auto;font-size:11px;color:var(--dim)}
+.task-row{display:flex;align-items:center;gap:12px;padding:14px 18px;
+  background:rgba(255,255,255,.03);border:1px solid var(--line);
+  border-radius:10px;margin-bottom:8px;max-width:720px}
+.task-row .name{flex:1;font-weight:500}
+.task-row .pid{font-family:monospace;font-size:11px;color:var(--dim)}
+.task-row .badge{background:rgba(79,195,247,.15);color:var(--accent);
+  padding:2px 8px;border-radius:6px;font-size:11px}
+.test-area{width:100%;max-width:720px;height:200px;border:2px dashed var(--accent);
+  border-radius:14px;display:flex;align-items:center;justify-content:center;
+  flex-direction:column;gap:8px;cursor:crosshair;margin-bottom:16px;
+  background:rgba(79,195,247,.05);position:relative}
+#rotate{position:fixed;inset:0;background:#03050d;z-index:2000;
+  display:flex;align-items:center;justify-content:center;text-align:center;
+  font-size:18px;color:var(--accent);padding:30px}
+
+/* Game item in games category */
+.empty-state{text-align:center;padding:40px;color:var(--dim);font-size:14px}
+
+/* Scrollbar */
+::-webkit-scrollbar{width:8px;height:8px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:rgba(79,195,247,.3);border-radius:4px}
+</style>
+</head>
+<body>
+
+<!-- BOOT SCREEN -->
+<div id="boot" class="screen">
+  <div class="boot-logo">PlayPhone<span> OS</span></div>
+  <div class="boot-sub">GNU GPL v3 · OPEN SOURCE</div>
+  <div class="boot-bar"><div id="boot-progress"></div></div>
+</div>
+
+<!-- MAIN XMB -->
+<div id="main" class="screen hidden">
+  <header id="topbar">
+    <div class="topbar-left">
+      <span class="brand">PlayPhone OS</span><span class="ver">v1.0.0</span>
+    </div>
+    <div class="topbar-right">
+      <span id="res-info"></span>
+      <span id="clock"></span>
+      <span id="user-chip">👤 BoobaUser</span>
+    </div>
+  </header>
+  <div id="xmb">
+    <div id="cats"></div>
+    <div id="items"></div>
+  </div>
+  <footer id="hint">← → категории · ↑ ↓ элементы · Enter открыть · тап по иконке</footer>
+</div>
+
+<!-- APP OVERLAY -->
+<div id="app-overlay" class="hidden">
+  <div class="app-header">
+    <button class="back-btn" id="app-back">◀ Назад</button>
+    <span id="app-title"></span>
+  </div>
+  <div id="app-body"></div>
+</div>
+
+<!-- GAME OVERLAY -->
+<div id="game-overlay" class="hidden">
+  <div class="game-header">
+    <button class="back-btn" id="game-back">◀ Назад</button>
+    <span id="game-title"></span>
+    <div class="game-actions">
+      <button id="game-kb-toggle" title="Виртуальная клавиатура">⌨️</button>
+      <button id="game-cursor-toggle" class="on" title="Виртуальный курсор">🖱️</button>
+    </div>
+  </div>
+  <div id="game-stage">
+    <iframe id="game-frame"
+      sandbox="allow-scripts allow-forms allow-modals allow-popups"
+      allow="fullscreen; autoplay"></iframe>
+    <div id="v-cursor" class="hidden"></div>
+  </div>
+  <div id="v-keyboard" class="hidden"></div>
+</div>
+
+<!-- ROTATE WARNING -->
+<div id="rotate" class="hidden">📱↻<br>Пожалуйста, поверните устройство горизонтально</div>
+
+<script>
+"use strict";
+
+/* ============================================================
+   PlayPhone OS — Kernel & State
+   Copyright (C) 2024  BoobaUser
+   Лицензия: GNU General Public License v3.0
+   ============================================================ */
+
+const LS_KEY = 'playphone_os_state_v1';
+
+const state = {
+  lang: 'ru',
+  user: 'BoobaUser',
+  cat: 0,
+  item: 0,
+  games: [],
+  fs: null,
+  vcursor: true,
+  vkb: true,
+  currentApp: null,
+};
+
+/* -------------------- i18n -------------------- */
+const I18N = {
+  ru: {
+    os:'PlayPhone OS', games:'Игры', apps:'Приложения', settings:'Настройки', about:'О системе',
+    'app.tasks':'Диспетчер задач','app.files':'Файловый менеджер','app.settings':'Настройки',
+    'app.help':'Справка','app.installer':'Установщик игр','app.about':'О системе',
+    'app.inputtest':'Тест ввода',
+    back:'Назад', add:'Добавить', open:'Открыть', delete:'Удалить', save:'Сохранить',
+    'add.game':'➕ Добавить игру', 'no.games':'Нет установленных игр',
+    'no.games.sub':'Используйте Установщик игр',
+    lang:'Язык', user:'Пользователь', resolution:'Разрешение',
+    'vcursor':'Виртуальный курсор','vkb':'Виртуальная клавиатура',
+    'tasks.title':'Диспетчер задач','tasks.kill':'Завершить','tasks.system':'Система',
+    'files.title':'Файловый менеджер','files.up':'⬆ Вверх','files.new':'➕ Новый файл',
+    'files.denied':'⛔ Доступ запрещён. Требуются права AdminBoobaUser',
+    'files.name':'Имя файла:','files.empty':'Папка пуста',
+    'installer.title':'Установщик игр',
+    'installer.desc':'Добавьте HTML-игру или папку с игрой. Все файлы упаковываются в песочницу.',
+    'installer.file':'📄 Добавить HTML-файл','installer.folder':'📁 Добавить папку с игрой',
+    'installer.ok':'Игра установлена:','installer.err':'Ошибка: нет HTML файла в папке',
+    'help.title':'Справка',
+    'about.title':'О системе','about.version':'Версия','about.license':'Лицензия',
+    'about.license.text':'GNU General Public License v3.0 — открытый исходный код. Вы можете свободно изучать, изменять и распространять код.',
+    'about.credits':'Разработка: BoobaUser · AdminBoobaUser',
+    'inputtest.title':'Тест виртуального ввода',
+    'inputtest.area':'Кликайте здесь виртуальным курсором',
+    'inputtest.clicks':'Клики',
+    'inputtest.input':'Проверьте виртуальную клавиатуру:',
+    'inputtest.placeholder':'Введите текст...',
+    'game.back':'◀ Назад','game.loading':'Загрузка игры...',
+    'rotate':'Пожалуйста, поверните устройство горизонтально',
+  },
+  en: {
+    os:'PlayPhone OS', games:'Games', apps:'Applications', settings:'Settings', about:'About',
+    'app.tasks':'Task Manager','app.files':'File Manager','app.settings':'Settings',
+    'app.help':'Help','app.installer':'Game Installer','app.about':'About',
+    'app.inputtest':'Input Test',
+    back:'Back', add:'Add', open:'Open', delete:'Delete', save:'Save',
+    'add.game':'➕ Add Game', 'no.games':'No games installed',
+    'no.games.sub':'Use Game Installer',
+    lang:'Language', user:'User', resolution:'Resolution',
+    'vcursor':'Virtual cursor','vkb':'Virtual keyboard',
+    'tasks.title':'Task Manager','tasks.kill':'End task','tasks.system':'System',
+    'files.title':'File Manager','files.up':'⬆ Up','files.new':'➕ New file',
+    'files.denied':'⛔ Access denied. AdminBoobaUser privileges required',
+    'files.name':'File name:','files.empty':'Empty folder',
+    'installer.title':'Game Installer',
+    'installer.desc':'Add an HTML game or folder. All files are packaged into a sandbox.',
+    'installer.file':'📄 Add HTML file','installer.folder':'📁 Add game folder',
+    'installer.ok':'Game installed:','installer.err':'Error: no HTML file found in folder',
+    'help.title':'Help',
+    'about.title':'About','about.version':'Version','about.license':'License',
+    'about.license.text':'GNU General Public License v3.0 — open source. You may freely study, modify and redistribute the code.',
+    'about.credits':'Developed by: BoobaUser · AdminBoobaUser',
+    'inputtest.title':'Virtual Input Test',
+    'inputtest.area':'Click here with virtual cursor',
+    'inputtest.clicks':'Clicks',
+    'inputtest.input':'Test virtual keyboard:',
+    'inputtest.placeholder':'Type text...',
+    'game.back':'◀ Back','game.loading':'Loading game...',
+    'rotate':'Please rotate the device to landscape',
+  },
+  uk: {
+    os:'PlayPhone OS', games:'Ігри', apps:'Додатки', settings:'Налаштування', about:'Про систему',
+    'app.tasks':'Диспетчер задач','app.files':'Файловий менеджер','app.settings':'Налаштування',
+    'app.help':'Довідка','app.installer':'Встановлювач ігор','app.about':'Про систему',
+    'app.inputtest':'Тест введення',
+    back:'Назад', add:'Додати', open:'Відкрити', delete:'Видалити', save:'Зберегти',
+    'add.game':'➕ Додати гру', 'no.games':'Немає встановлених ігор',
+    'no.games.sub':'Скористайтесь Встановлювачем ігор',
+    lang:'Мова', user:'Користувач', resolution:'Роздільність',
+    'vcursor':'Віртуальний курсор','vkb':'Віртуальна клавіатура',
+    'tasks.title':'Диспетчер задач','tasks.kill':'Завершити','tasks.system':'Система',
+    'files.title':'Файловий менеджер','files.up':'⬆ Вгору','files.new':'➕ Новий файл',
+    'files.denied':'⛔ Доступ заборонено. Потрібні права AdminBoobaUser',
+    'files.name':"Ім'я файлу:",'files.empty':'Порожня папка',
+    'installer.title':'Встановлювач ігор',
+    'installer.desc':'Додайте HTML-гру або папку з грою. Усі файли пакуються в пісочницю.',
+    'installer.file':'📄 Додати HTML-файл','installer.folder':'📁 Додати папку з грою',
+    'installer.ok':'Гру встановлено:','installer.err':'Помилка: немає HTML файлу в папці',
+    'help.title':'Довідка',
+    'about.title':'Про систему','about.version':'Версія','about.license':'Ліцензія',
+    'about.license.text':'GNU General Public License v3.0 — відкритий код. Ви можете вільно вивчати, змінювати та розповсюджувати код.',
+    'about.credits':'Розробка: BoobaUser · AdminBoobaUser',
+    'inputtest.title':'Тест віртуального введення',
+    'inputtest.area':'Клікайте тут віртуальним курсором',
+    'inputtest.clicks':'Кліки',
+    'inputtest.input':'Перевірте віртуальну клавіатуру:',
+    'inputtest.placeholder':'Введіть текст...',
+    'game.back':'◀ Назад','game.loading':'Завантаження гри...',
+    'rotate':'Будь ласка, поверніть пристрій горизонтально',
+  },
+  de: {
+    os:'PlayPhone OS', games:'Spiele', apps:'Anwendungen', settings:'Einstellungen', about:'Über',
+    'app.tasks':'Task-Manager','app.files':'Dateimanager','app.settings':'Einstellungen',
+    'app.help':'Hilfe','app.installer':'Spiel-Installer','app.about':'Über',
+    'app.inputtest':'Eingabetest',
+    back:'Zurück', add:'Hinzufügen', open:'Öffnen', delete:'Löschen', save:'Speichern',
+    'add.game':'➕ Spiel hinzufügen', 'no.games':'Keine Spiele installiert',
+    'no.games.sub':'Nutzen Sie den Spiel-Installer',
+    lang:'Sprache', user:'Benutzer', resolution:'Auflösung',
+    'vcursor':'Virtueller Cursor','vkb':'Virtuelle Tastatur',
+    'tasks.title':'Task-Manager','tasks.kill':'Beenden','tasks.system':'System',
+    'files.title':'Dateimanager','files.up':'⬆ Hoch','files.new':'➕ Neue Datei',
+    'files.denied':'⛔ Zugriff verweigert. AdminBoobaUser-Rechte erforderlich',
+    'files.name':'Dateiname:','files.empty':'Leerer Ordner',
+    'installer.title':'Spiel-Installer',
+    'installer.desc':'Fügen Sie ein HTML-Spiel oder einen Ordner hinzu. Alle Dateien werden in eine Sandbox gepackt.',
+    'installer.file':'📄 HTML-Datei hinzufügen','installer.folder':'📁 Spielordner hinzufügen',
+    'installer.ok':'Spiel installiert:','installer.err':'Fehler: keine HTML-Datei im Ordner',
+    'help.title':'Hilfe',
+    'about.title':'Über','about.version':'Version','about.license':'Lizenz',
+    'about.license.text':'GNU General Public License v3.0 — Open Source. Sie dürfen den Code frei studieren, ändern und verbreiten.',
+    'about.credits':'Entwicklung: BoobaUser · AdminBoobaUser',
+    'inputtest.title':'Virtueller Eingabetest',
+    'inputtest.area':'Klicken Sie hier mit dem virtuellen Cursor',
+    'inputtest.clicks':'Klicks',
+    'inputtest.input':'Virtuelle Tastatur testen:',
+    'inputtest.placeholder':'Text eingeben...',
+    'game.back':'◀ Zurück','game.loading':'Spiel wird geladen...',
+    'rotate':'Bitte drehen Sie das Gerät ins Querformat',
+  },
+  es: {
+    os:'PlayPhone OS', games:'Juegos', apps:'Aplicaciones', settings:'Ajustes', about:'Acerca de',
+    'app.tasks':'Administrador de tareas','app.files':'Gestor de archivos','app.settings':'Ajustes',
+    'app.help':'Ayuda','app.installer':'Instalador de juegos','app.about':'Acerca de',
+    'app.inputtest':'Prueba de entrada',
+    back:'Atrás', add:'Añadir', open:'Abrir', delete:'Eliminar', save:'Guardar',
+    'add.game':'➕ Añadir juego', 'no.games':'No hay juegos instalados',
+    'no.games.sub':'Usa el Instalador de juegos',
+    lang:'Idioma', user:'Usuario', resolution:'Resolución',
+    'vcursor':'Cursor virtual','vkb':'Teclado virtual',
+    'tasks.title':'Administrador de tareas','tasks.kill':'Terminar','tasks.system':'Sistema',
+    'files.title':'Gestor de archivos','files.up':'⬆ Arriba','files.new':'➕ Nuevo archivo',
+    'files.denied':'⛔ Acceso denegado. Se requieren privilegios AdminBoobaUser',
+    'files.name':'Nombre de archivo:','files.empty':'Carpeta vacía',
+    'installer.title':'Instalador de juegos',
+    'installer.desc':'Añade un juego HTML o carpeta. Todos los archivos se empaquetan en un sandbox.',
+    'installer.file':'📄 Añadir archivo HTML','installer.folder':'📁 Añadir carpeta de juego',
+    'installer.ok':'Juego instalado:','installer.err':'Error: no se encontró archivo HTML en la carpeta',
+    'help.title':'Ayuda',
+    'about.title':'Acerca de','about.version':'Versión','about.license':'Licencia',
+    'about.license.text':'GNU General Public License v3.0 — código abierto. Puedes estudiar, modificar y redistribuir el código libremente.',
+    'about.credits':'Desarrollado por: BoobaUser · AdminBoobaUser',
+    'inputtest.title':'Prueba de entrada virtual',
+    'inputtest.area':'Haz clic aquí con el cursor virtual',
+    'inputtest.clicks':'Clics',
+    'inputtest.input':'Prueba el teclado virtual:',
+    'inputtest.placeholder':'Escribe texto...',
+    'game.back':'◀ Atrás','game.loading':'Cargando juego...',
+    'rotate':'Por favor, gira el dispositivo a horizontal',
+  },
+};
+
+function t(key){ return (I18N[state.lang] && I18N[state.lang][key]) || I18N.en[key] || key; }
+
+/* -------------------- Virtual File System -------------------- */
+function defaultFS(){
+  return {
+    '/': {type:'dir',mode:'755',owner:'root',children:['home','root','games','apps','system','tmp']},
+    '/home': {type:'dir',mode:'755',owner:'root',children:['BoobaUser','AdminBoobaUser']},
+    '/home/BoobaUser': {type:'dir',mode:'700',owner:'BoobaUser',children:['games','documents','downloads']},
+    '/home/BoobaUser/games': {type:'dir',mode:'755',owner:'BoobaUser',children:[]},
+    '/home/BoobaUser/documents': {type:'dir',mode:'755',owner:'BoobaUser',children:['readme.txt']},
+    '/home/BoobaUser/documents/readme.txt': {type:'file',mode:'644',owner:'BoobaUser',
+      content:'Добро пожаловать в PlayPhone OS!\n\nЭто открытая ОС под лицензией GNU GPL v3.\nВы можете добавлять HTML-игры через Установщик.\n\nПользователи:\n  BoobaUser — обычный пользователь\n  AdminBoobaUser — администратор (root доступ к /root)\n'},
+    '/home/BoobaUser/downloads': {type:'dir',mode:'755',owner:'BoobaUser',children:[]},
+    '/home/AdminBoobaUser': {type:'dir',mode:'700',owner:'AdminBoobaUser',children:['secret.txt']},
+    '/home/AdminBoobaUser/secret.txt': {type:'file',mode:'600',owner:'AdminBoobaUser',
+      content:'Секретный файл администратора.\nПоздравляю, вы получили root-доступ!'},
+    '/root': {type:'dir',mode:'700',owner:'AdminBoobaUser',children:['system.conf','keys']},
+    '/root/system.conf': {type:'file',mode:'600',owner:'AdminBoobaUser',
+      content:'# PlayPhone OS system configuration\nkernel=playphone\nversion=1.0.0\nlicense=GPL-3.0\n'},
+    '/root/keys': {type:'dir',mode:'700',owner:'AdminBoobaUser',children:[]},
+    '/games': {type:'dir',mode:'755',owner:'root',children:[]},
+    '/apps': {type:'dir',mode:'755',owner:'root',children:[]},
+    '/system': {type:'dir',mode:'755',owner:'root',children:['version','license']},
+    '/system/version': {type:'file',mode:'444',owner:'root',content:'PlayPhone OS 1.0.0'},
+    '/system/license': {type:'file',mode:'444',owner:'root',
+      content:'GNU GENERAL PUBLIC LICENSE\nVersion 3, 29 June 2007\n\nЭто открытое программное обеспечение под лицензией GPLv3.\n'},
+    '/tmp': {type:'dir',mode:'777',owner:'root',children:[]},
+  };
+}
+
+function initFS(){
+  if(!state.fs) state.fs = defaultFS();
+}
+
+function fsGet(path){
+  const p = normalizePath(path);
+  return state.fs[p] || null;
+}
+function normalizePath(p){
+  p = (p||'/').replace(/\/+/g,'/');
+  if(p.length>1 && p.endsWith('/')) p=p.slice(0,-1);
+  if(!p.startsWith('/')) p='/'+p;
+  return p;
+}
+function parentOf(p){
+  p = normalizePath(p);
+  if(p==='/') return '/';
+  return p.substring(0,p.lastIndexOf('/')) || '/';
+}
+function basename(p){
+  p = normalizePath(p);
+  if(p==='/') return '/';
+  return p.substring(p.lastIndexOf('/')+1);
+}
+function isRootRestricted(path){
+  const p = normalizePath(path);
+  return p === '/root' || p.startsWith('/root/');
+}
+function canAccess(path){
+  if(!isRootRestricted(path)) return true;
+  return state.user === 'AdminBoobaUser';
+}
+function fsMkdir(path){
+  path = normalizePath(path);
+  if(fsGet(path)) return false;
+  const parent = parentOf(path);
+  const pnode = fsGet(parent);
+  if(!pnode || pnode.type!=='dir') return false;
+  state.fs[path] = {type:'dir',mode:'755',owner:state.user,children:[]};
+  pnode.children.push(basename(path));
+  return true;
+}
+function fsWrite(path, content, owner){
+  path = normalizePath(path);
+  const parent = parentOf(path);
+  const pnode = fsGet(parent);
+  if(!pnode || pnode.type!=='dir') return false;
+  if(!fsGet(path)){
+    pnode.children.push(basename(path));
+  }
+  state.fs[path] = {type:'file',mode:'644',owner:owner||state.user,content:String(content)};
+  return true;
+}
+function fsDelete(path){
+  path = normalizePath(path);
+  if(path==='/') return false;
+  const pnode = fsGet(path);
+  if(!pnode) return false;
+  if(pnode.type==='dir' && pnode.children.length) return false;
+  delete state.fs[path];
+  const parent = parentOf(path);
+  const p = fsGet(parent);
+  if(p){ p.children = p.children.filter(c=>c!==basename(path)); }
+  return true;
+}
+
+/* -------------------- Persistence -------------------- */
+function save(){
+  try{
+    const data = {
+      lang: state.lang, user: state.user, games: state.games,
+      fs: state.fs, vcursor: state.vcursor, vkb: state.vkb
+    };
+    localStorage.setItem(LS_KEY, JSON.stringify(data));
+  }catch(e){
+    console.warn('Save failed (storage full?):', e.message);
+  }
+}
+function load(){
+  try{
+    const raw = localStorage.getItem(LS_KEY);
+    if(raw){
+      const d = JSON.parse(raw);
+      if(d.lang) state.lang = d.lang;
+      if(d.user) state.user = d.user;
+      if(Array.isArray(d.games)) state.games = d.games;
+      if(d.fs) state.fs = d.fs;
+      if(typeof d.vcursor === 'boolean') state.vcursor = d.vcursor;
+      if(typeof d.vkb === 'boolean') state.vkb = d.vkb;
+    }
+  }catch(e){ console.warn('Load failed:', e.message); }
+  initFS();
+}
+
+/* -------------------- Categories -------------------- */
+function getCategories(){
+  return [
+    {id:'games', icon:'🎮', label:t('games')},
+    {id:'apps', icon:'📱', label:t('apps')},
+    {id:'settings', icon:'⚙️', label:t('settings')},
+    {id:'about', icon:'ℹ️', label:t('about')},
+  ];
+}
+function getApps(){
+  return [
+    {id:'tasks', icon:'📊', title:t('app.tasks')},
+    {id:'files', icon:'📁', title:t('app.files')},
+    {id:'settings', icon:'⚙️', title:t('app.settings')},
+    {id:'help', icon:'❓', title:t('app.help')},
+    {id:'installer', icon:'📥', title:t('app.installer')},
+    {id:'about', icon:'ℹ️', title:t('app.about')},
+    {id:'inputtest', icon:'🖱️', title:t('app.inputtest')},
+  ];
+}
+
+function getItems(catId){
+  if(catId === 'games'){
+    const arr = state.games.map(g=>({
+      icon: g.icon || '🎮',
+      title: g.name,
+      sub: 'HTML · ' + new Date(g.date).toLocaleDateString(),
+      action: 'play',
+      gameId: g.id,
+    }));
+    arr.push({icon:'➕', title:t('add.game'), action:'installer', sub:''});
+    return arr;
+  }
+  if(catId === 'apps'){
+    return getApps().map(a=>({
+      icon:a.icon, title:a.title, sub:'', action:'app', appId:a.id
+    }));
+  }
+  if(catId === 'settings'){
+    return [
+      {icon:'🌐', title:t('lang') + ': ' + state.lang.toUpperCase(), action:'lang', sub:''},
+      {icon:'👤', title:t('user') + ': ' + state.user, action:'user', sub:''},
+      {icon:'⚙️', title:t('app.settings'), action:'app', appId:'settings', sub:''},
+    ];
+  }
+  if(catId === 'about'){
+    return [
+      {icon:'ℹ️', title:t('app.about'), action:'app', appId:'about', sub:''},
+      {icon:'❓', title:t('app.help'), action:'app', appId:'help', sub:''},
+      {icon:'⚖️', title:'GNU GPL v3.0', action:'app', appId:'about', sub:''},
+    ];
+  }
+  return [];
+}
+
+/* -------------------- Render XMB -------------------- */
+function renderXMB(){
+  const cats = getCategories();
+  if(state.cat >= cats.length) state.cat = 0;
+  const cat = cats[state.cat];
+  const catEl = document.getElementById('cats');
+  catEl.innerHTML = cats.map((c,i)=>
+    `<div class="cat ${i===state.cat?'active':''}" data-i="${i}">
+       ${c.icon}<span class="cat-label">${c.label}</span>
+     </div>`
+  ).join('');
+  catEl.querySelectorAll('.cat').forEach(el=>{
+    el.addEventListener('click', ()=>{
+      state.cat = +el.dataset.i;
+      state.item = 0;
+      renderXMB();
+    });
+  });
+
+  const items = getItems(cat.id);
+  if(state.item >= items.length) state.item = Math.max(0, items.length-1);
+  const itemsEl = document.getElementById('items');
+  if(!items.length){
+    itemsEl.innerHTML = `<div class="empty-state">${t('no.games')}<br><small>${t('no.games.sub')}</small></div>`;
+  } else {
+    itemsEl.innerHTML = items.map((it,i)=>
+      `<div class="item ${i===state.item?'active':''}" data-i="${i}">
+         <div class="item-icon">${it.icon}</div>
+         <div class="item-info">
+           <div class="item-title">${esc(it.title)}</div>
+           ${it.sub?`<div class="item-sub">${esc(it.sub)}</div>`:''}
+         </div>
+         ${i===state.item?'<div class="item-action">▶</div>':''}
+       </div>`
+    ).join('');
+    itemsEl.querySelectorAll('.item').forEach(el=>{
+      el.addEventListener('click', ()=>{
+        state.item = +el.dataset.i;
+        activateItem(cat.id, items[state.item]);
+      });
+    });
+  }
+
+  document.getElementById('user-chip').textContent = '👤 ' + state.user;
+  document.getElementById('res-info').textContent = detectResolution();
+}
+
+function activateItem(catId, item){
+  if(item.action === 'app') openApp(item.appId);
+  else if(item.action === 'installer') openApp('installer');
+  else if(item.action === 'play') launchGame(item.gameId);
+  else if(item.action === 'lang') openApp('settings');
+  else if(item.action === 'user') openApp('settings');
+}
+
+/* -------------------- Resolution -------------------- */
+function detectResolution(){
+  const w = Math.max(window.innerWidth, window.innerHeight);
+  const h = Math.min(window.innerWidth, window.innerHeight);
+  if(w<640) return '< 360p';
+  if(w<854) return '360p';
+  if(w<1280) return '480p';
+  if(w<1920) return '720p HD';
+  if(w<2560) return '1080p FHD';
+  if(w<3840) return '2K QHD';
+  return '4K UHD';
+}
+
+/* -------------------- Utilities -------------------- */
+function esc(s){ return String(s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function escapeRegExp(s){ return s.replace(/[.*+?^${}()|[\]\\]/g,'\\$&'); }
+function uid(){ return 'id_' + Date.now().toString(36) + Math.random().toString(36).slice(2,7); }
+
+/* ============================================================
+   APP SYSTEM
+   ============================================================ */
+function openApp(id){
+  state.currentApp = id;
+  document.getElementById('app-overlay').classList.remove('hidden');
+  const titles = {
+    tasks: t('app.tasks'), files: t('app.files'), settings: t('app.settings'),
+    help: t('app.help'), installer: t('app.installer'), about: t('app.about'),
+    inputtest: t('app.inputtest'),
+  };
+  document.getElementById('app-title').textContent = titles[id] || id;
+  const body = document.getElementById('app-body');
+
+  if(id === 'tasks') body.innerHTML = renderTaskManager();
+  else if(id === 'files') { body.innerHTML = renderFileManager(); fmLoad('/'); }
+  else if(id === 'settings') { body.innerHTML = renderSettings(); attachSettings(); }
+  else if(id === 'help') body.innerHTML = renderHelp();
+  else if(id === 'installer') { body.innerHTML = renderInstaller(); attachInstaller(); }
+  else if(id === 'about') body.innerHTML = renderAbout();
+  else if(id === 'inputtest') { body.innerHTML = renderInputTest(); attachInputTest(); }
+
+  pushTask(titles[id] || id, id);
+}
+
+function closeApp(){
+  document.getElementById('app-overlay').classList.add('hidden');
+  state.currentApp = null;
+  popTask();
+}
+
+function pushTask(name, id){
+  if(state.tasks.find(t=>t.id===id)) return;
+  state.tasks.push({id, name, pid: 1000 + state.tasks.length});
+}
+function popTask(){
+  state.tasks = state.tasks.filter(t=>t.id!==state.currentApp);
+}
+
+/* ---------- Task Manager ---------- */
+function renderTaskManager(){
+  const sysTasks = [
+    {name:'PlayPhone Kernel', pid:1, badge:t('tasks.system')},
+    {name:'XMB Shell', pid:2, badge:t('tasks.system')},
+    {name:'Virtual Input', pid:3, badge:t('tasks.system')},
+  ];
+  const userTasks = state.tasks.slice();
+  return `<div class="app-page">
+    <h1>${t('tasks.title')}</h1>
+    <h2>${t('tasks.system')}</h2>
+    ${sysTasks.map(s=>`<div class="task-row">
+      <div class="name">${esc(s.name)}</div>
+      <div class="pid">PID ${s.pid}</div>
+      <div class="badge">${s.badge}</div>
+    </div>`).join('')}
+    <h2>Активные приложения</h2>
+    ${userTasks.length ? userTasks.map(s=>`<div class="task-row">
+      <div class="name">${esc(s.name)}</div>
+      <div class="pid">PID ${s.pid}</div>
+      <button class="btn danger" onclick="OS.killTask('${s.id}')">${t('tasks.kill')}</button>
+    </div>`).join('') : `<p style="color:var(--dim)">Нет активных приложений</p>`}
+    <h2>Память</h2>
+    <p style="color:var(--dim)">Игр установлено: ${state.games.length} · Файлов в FS: ${Object.keys(state.fs).length}</p>
+  </div>`;
+}
+function killTask(id){
+  if(id === state.currentApp){ closeApp(); return; }
+  state.tasks = state.tasks.filter(t=>t.id!==id);
+  if(state.currentApp==='tasks') openApp('tasks');
+}
+
+/* ---------- File Manager ---------- */
+let fmPath = '/';
+function renderFileManager(){
+  return `<div class="app-page">
+    <h1>${t('files.title')}</h1>
+    <div class="fm-toolbar">
+      <button class="btn" onclick="OS.fmUp()">${t('files.up')}</button>
+      <button class="btn" onclick="OS.fmNewFile()">${t('files.new')}</button>
+      <div class="fm-path" id="fm-path">${esc(fmPath)}</div>
+    </div>
+    <div class="fm-list" id="fm-list"></div>
+    <div id="fm-view" style="margin-top:16px"></div>
+  </div>`;
+}
+function fmLoad(path){
+  fmPath = normalizePath(path);
+  if(!canAccess(fmPath)){
+    document.getElementById('fm-list').innerHTML =
+      `<div class="empty-state" style="color:#ff8a8a">${t('files.denied')}</div>`;
+    document.getElementById('fm-path').textContent = fmPath;
+    return;
+  }
+  const node = fsGet(fmPath);
+  const list = document.getElementById('fm-list');
+  document.getElementById('fm-path').textContent = fmPath + ' [' + state.user + ']';
+  if(!node || node.type !== 'dir'){ list.innerHTML=''; return; }
+  if(!node.children.length){
+    list.innerHTML = `<div class="empty-state">${t('files.empty')}</div>`;
+    return;
+  }
+  list.innerHTML = node.children.map(name=>{
+    const p = (fmPath==='/'?'':fmPath) + '/' + name;
+    const child = fsGet(p);
+    const isDir = child && child.type === 'dir';
+    const restricted = isRootRestricted(p) && state.user !== 'AdminBoobaUser';
+    return `<div class="fm-item" onclick="OS.fmOpen('${esc(p)}')">
+      <span class="ico">${isDir?'📁':'📄'}</span>
+      <span>${esc(name)}${restricted?' 🔒':''}</span>
+      <span class="meta">${child ? (isDir?'DIR':'FILE') + ' · ' + (child.mode||'') + ' · ' + (child.owner||'') : ''}</span>
+    </div>`;
+  }).join('');
+}
+function fmOpen(path){
+  path = normalizePath(path);
+  if(!canAccess(path)){
+    document.getElementById('fm-view').innerHTML =
+      `<div style="color:#ff8a8a">${t('files.denied')}</div>`;
+    return;
+  }
+  const node = fsGet(path);
+  if(!node) return;
+  if(node.type === 'dir'){ fmLoad(path); return; }
+  const view = document.getElementById('fm-view');
+  view.innerHTML = `<div style="background:rgba(0,0,0,.4);padding:16px;border-radius:10px;border:1px solid var(--line)">
+    <div style="margin-bottom:8px;color:var(--accent);font-family:monospace">${esc(path)}</div>
+    <textarea id="fm-edit" style="width:100%;height:200px;background:#000;color:#fff;border:1px solid var(--line);border-radius:8px;padding:10px;font-family:monospace;font-size:13px;resize:vertical">${esc(node.content||'')}</textarea>
+    <div style="margin-top:10px">
+      <button class="btn primary" onclick="OS.fmSave('${esc(path)}')">${t('save')}</button>
+      <button class="btn danger" onclick="OS.fmDelete('${esc(path)}')">${t('delete')}</button>
+    </div>
+  </div>`;
+}
+function fmSave(path){
+  const node = fsGet(path);
+  const content = document.getElementById('fm-edit').value;
+  if(node){ node.content = content; save(); alert(t('save') + ' OK'); }
+}
+function fmDelete(path){
+  if(!confirm(t('delete') + ' ' + path + '?')) return;
+  if(fsDelete(path)){ save(); document.getElementById('fm-view').innerHTML=''; fmLoad(parentOf(path)); }
+}
+function fmUp(){ fmLoad(parentOf(fmPath)); }
+function fmNewFile(){
+  const name = prompt(t('files.name'));
+  if(!name) return;
+  const p = (fmPath==='/'?'':fmPath) + '/' + name;
+  if(canAccess(p)){ fsWrite(p, '', state.user); save(); fmLoad(fmPath); }
+}
+
+/* ---------- Settings ---------- */
+function renderSettings(){
+  return `<div class="app-page">
+    <h1>${t('app.settings')}</h1>
+    <div class="setting-group">
+      <label>${t('lang')}</label>
+      <select id="set-lang">
+        ${Object.keys(I18N).map(l=>`<option value="${l}" ${l===state.lang?'selected':''}>${l.toUpperCase()}</option>`).join('')}
+      </select>
+    </div>
+    <div class="setting-group">
+      <label>${t('user')}</label>
+      <select id="set-user">
+        <option value="BoobaUser" ${state.user==='BoobaUser'?'selected':''}>BoobaUser (обычный)</option>
+        <option value="AdminBoobaUser" ${state.user==='AdminBoobaUser'?'selected':''}>AdminBoobaUser (root)</option>
+      </select>
+    </div>
+    <div class="setting-group">
+      <label>${t('vcursor')}</label>
+      <input type="checkbox" id="set-vcursor" ${state.vcursor?'checked':''}>
+    </div>
+    <div class="setting-group">
+      <label>${t('vkb')}</label>
+      <input type="checkbox" id="set-vkb" ${state.vkb?'checked':''}>
+    </div>
+    <div class="setting-group">
+      <label>${t('resolution')}</label>
+      <span style="color:var(--accent)">${detectResolution()} · ${window.innerWidth}×${window.innerHeight}</span>
+    </div>
+    <div class="setting-group">
+      <label>Ориентация</label>
+      <span style="color:var(--accent)">Горизонтальная (обязательно)</span>
+    </div>
+  </div>`;
+}
+function attachSettings(){
+  document.getElementById('set-lang').addEventListener('change', e=>{
+    state.lang = e.target.value; save(); renderXMB(); openApp('settings');
+  });
+  document.getElementById('set-user').addEventListener('change', e=>{
+    state.user = e.target.value; save(); renderXMB(); openApp('settings');
+  });
+  document.getElementById('set-vcursor').addEventListener('change', e=>{
+    state.vcursor = e.target.checked; save();
+  });
+  document.getElementById('set-vkb').addEventListener('change', e=>{
+    state.vkb = e.target.checked; save();
+  });
+}
+
+/* ---------- Help ---------- */
+function renderHelp(){
+  const L = state.lang;
+  const help = {
+    ru: `<h1>${t('help.title')} — PlayPhone OS</h1>
+      <h2>Управление</h2>
+      <p>Используйте <code>←</code> <code>→</code> для переключения категорий, <code>↑</code> <code>↓</code> для выбора элемента, <code>Enter</code> для запуска. На тач-устройствах просто тапайте по иконкам и элементам.</p>
+      <h2>Добавление игр</h2>
+      <p>Откройте <b>Приложения → Установщик игр</b>. Можно добавить один HTML-файл или целую папку с игрой (все файлы будут упакованы в песочницу).</p>
+      <h2>Песочница</h2>
+      <p>HTML-игры запускаются в <code>iframe</code> с атрибутом <code>sandbox="allow-scripts allow-forms allow-modals allow-popups"</code>. Игра не имеет доступа к файловой системе ОС, localStorage и DOM.</p>
+      <h2>Виртуальный курсор и клавиатура</h2>
+      <p>В игре нажмите кнопки <b>⌨️</b> и <b>🖱️</b> в верхней панели. Курсор можно перетаскивать пальцем — отпускание вызывает клик. Клавиатура отправляет нажатия в игру. Это удобно на смартфонах и планшетах.</p>
+      <h2>Файловая система</h2>
+      <p>Собственная иерархия: <code>/</code>, <code>/home</code>, <code>/root</code>, <code>/games</code>, <code>/apps</code>, <code>/system</code>, <code>/tmp</code>. Доступ к <code>/root</code> разрешён только пользователю <b>AdminBoobaUser</b>. Переключить пользователя можно в Настройках.</p>
+      <h2>Разрешение экрана</h2>
+      <p>Поддерживаются экраны от 360p. Рекомендуется 720p, 1080p, 2K, 4K. Только горизонтальная ориентация.</p>
+      <h2>Лицензия</h2>
+      <p>PlayPhone OS распространяется по лицензии <b>GNU GPL v3.0</b>. Вы можете изменять и распространять код.</p>`,
+    en: `<h1>${t('help.title')} — PlayPhone OS</h1>
+      <h2>Controls</h2>
+      <p>Use <code>←</code> <code>→</code> to switch categories, <code>↑</code> <code>↓</code> to select items, <code>Enter</code> to launch. On touch devices just tap icons and items.</p>
+      <h2>Adding games</h2>
+      <p>Open <b>Apps → Game Installer</b>. You can add a single HTML file or an entire game folder (all files get packed into the sandbox).</p>
+      <h2>Sandbox</h2>
+      <p>HTML games run in an <code>iframe</code> with <code>sandbox="allow-scripts allow-forms allow-modals allow-popups"</code>. Games have no access to OS filesystem, localStorage or DOM.</p>
+      <h2>Virtual cursor & keyboard</h2>
+      <p>In-game press <b>⌨️</b> and <b>🖱️</b> in the top bar. Drag the cursor with your finger — release triggers a click. Keyboard sends key presses to the game. Perfect for phones and tablets.</p>
+      <h2>Filesystem</h2>
+      <p>Custom hierarchy: <code>/</code>, <code>/home</code>, <code>/root</code>, <code>/games</code>, <code>/apps</code>, <code>/system</code>, <code>/tmp</code>. Access to <code>/root</code> requires <b>AdminBoobaUser</b>. Switch user in Settings.</p>
+      <h2>Resolution</h2>
+      <p>Supported from 360p. Recommended 720p, 1080p, 2K, 4K. Landscape only.</p>
+      <h2>License</h2>
+      <p>PlayPhone OS is distributed under <b>GNU GPL v3.0</b>. You may modify and redistribute the code.</p>`,
+  };
+  return `<div class="app-page">${help[L] || help.en}</div>`;
+}
+
+/* ---------- Installer ---------- */
+function renderInstaller(){
+  return `<div class="app-page">
+    <h1>${t('installer.title')}</h1>
+    <p>${t('installer.desc')}</p>
+    <label class="btn primary">
+      ${t('installer.file')}
+      <input type="file" accept=".html,.htm" id="inst-file" hidden>
+    </label>
+    <label class="btn primary">
+      ${t('installer.folder')}
+      <input type="file" webkitdirectory multiple id="inst-folder" hidden>
+    </label>
+    <div id="inst-status" style="margin-top:20px"></div>
+    <h2>Установленные игры (${state.games.length})</h2>
+    ${state.games.length ? state.games.map(g=>`<div class="task-row">
+      <div class="name">${esc(g.icon||'🎮')} ${esc(g.name)}</div>
+      <button class="btn" onclick="OS.launchGame('${g.id}')">${t('open')}</button>
+      <button class="btn danger" onclick="OS.removeGame('${g.id}')">${t('delete')}</button>
+    </div>`).join('') : `<p style="color:var(--dim)">${t('no.games')}</p>`}
+  </div>`;
+}
+function attachInstaller(){
+  document.getElementById('inst-file').addEventListener('change', async e=>{
+    const f = e.target.files[0]; if(!f) return;
+    const txt = await f.text();
+    const name = f.name.replace(/\.html?$/i,'');
+    const game = {
+      id: uid(), name, entry: f.name, html: txt, assets: {},
+      date: Date.now(), icon: '🎮'
+    };
+    state.games.push(game); save();
+    setStatus(t('installer.ok') + ' ' + name);
+    openApp('installer');
+  });
+  document.getElementById('inst-folder').addEventListener('change', async e=>{
+    const files = Array.from(e.target.files);
+    if(!files.length) return;
+    const assets = {};
+    let entryHtml = null, entryPath = null;
+    for(const f of files){
+      const rel = f.webkitRelativePath.split('/').slice(1).join('/') || f.name;
+      if(/\.html?$/i.test(rel) && !entryPath){
+        entryPath = rel;
+        entryHtml = await f.text();
+      }
+      if(/\.(html?|css|js|json|txt|md|xml|svg)$/i.test(rel) || (f.type && f.type.startsWith('text/'))){
+        const txt = await f.text();
+        assets[rel] = 'data:text/plain;charset=utf-8;base64,' + b64(txt);
+      } else {
+        assets[rel] = await fileToDataURL(f);
+      }
+    }
+    if(!entryHtml){ setStatus(t('installer.err')); return; }
+    delete assets[entryPath];
+    const folderName = files[0].webkitRelativePath.split('/')[0];
+    const game = {
+      id: uid(), name: folderName, entry: entryPath,
+      html: entryHtml, assets, date: Date.now(), icon: '🎮'
+    };
+    state.games.push(game); save();
+    setStatus(t('installer.ok') + ' ' + folderName);
+    openApp('installer');
+  });
+}
+function setStatus(msg){
+  const el = document.getElementById('inst-status');
+  if(el) el.innerHTML = `<div style="padding:14px;background:rgba(79,195,247,.12);border-radius:10px;color:var(--accent)">${esc(msg)}</div>`;
+}
+function b64(str){
+  return btoa(unescape(encodeURIComponent(str)));
+}
+function fileToDataURL(file){
+  return new Promise(res=>{
+    const r = new FileReader();
+    r.onload = ()=>res(r.result);
+    r.readAsDataURL(file);
+  });
+}
+
+/* ---------- About ---------- */
+function renderAbout(){
+  return `<div class="app-page">
+    <h1>${t('about.title')} — PlayPhone OS</h1>
+    <p style="font-size:20px;color:var(--accent);font-weight:600">PlayPhone OS v1.0.0</p>
+    <h2>${t('about.license')}</h2>
+    <p>${t('about.license.text')}</p>
+    <pre style="background:rgba(0,0,0,.4);padding:16px;border-radius:10px;
+      font-family:monospace;font-size:12px;overflow:auto;color:var(--dim);max-height:220px">
+PlayPhone OS
+Copyright (C) 2024  BoobaUser
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see &lt;https://www.gnu.org/licenses/&gt;.
+    </pre>
+    <h2>${t('about.version')}</h2>
+    <p>${t('about.version')}: 1.0.0 · Kernel: playphone · Sandbox: iframe-srcdoc</p>
+    <h2>${t('about.credits')}</h2>
+    <p style="color:var(--dim)">Пользователи системы: <b style="color:var(--accent)">BoobaUser</b> (обычный), <b style="color:var(--accent)">AdminBoobaUser</b> (root).</p>
+    <h2>${t('resolution')}</h2>
+    <p>${detectResolution()} · ${window.innerWidth}×${window.innerHeight} · Landscape only</p>
+  </div>`;
+}
+
+/* ---------- Input Test ---------- */
+let inputTestClicks = 0;
+function renderInputTest(){
+  return `<div class="app-page">
+    <h1>${t('inputtest.title')}</h1>
+    <div class="test-area" id="test-area">
+      <span style="font-size:32px">🖱️</span>
+      <span style="color:var(--dim);font-size:13px">${t('inputtest.area')}</span>
+      <div id="test-clicks" style="color:var(--accent);font-size:18px;font-weight:600">
+        ${t('inputtest.clicks')}: 0</div>
+    </div>
+    <h2>${t('inputtest.input')}</h2>
+    <input type="text" id="test-input" placeholder="${t('inputtest.placeholder')}"
+      style="width:100%;max-width:520px;background:rgba(0,0,0,.5);border:1px solid var(--line);
+      color:#fff;padding:12px 16px;border-radius:10px;font-size:15px">
+  </div>`;
+}
+function attachInputTest(){
+  const area = document.getElementById('test-area');
+  inputTestClicks = 0;
+  area.addEventListener('click', ()=>{
+    inputTestClicks++;
+    document.getElementById('test-clicks').textContent = t('inputtest.clicks') + ': ' + inputTestClicks;
+  });
+}
+
+/* ============================================================
+   GAME SANDBOX
+   ============================================================ */
+const VIRTUAL_INPUT_SCRIPT = `
+<script>
+(function(){
+  function firePointer(type, x, y){
+    var t = document.elementFromPoint(x,y) || document.body;
+    var opts = {bubbles:true,cancelable:true,view:window,clientX:x,clientY:y,screenX:x,screenY:y,button:0,pointerId:1};
+    try{ t.dispatchEvent(new MouseEvent(type, opts)); }catch(e){}
+    try{ t.dispatchEvent(new PointerEvent(type, opts)); }catch(e){}
+    return t;
+  }
+  function fireKey(k, type){
+    var t = document.activeElement || document.body;
+    var opts = {key:k, code:k, bubbles:true, cancelable:true};
+    try{ t.dispatchEvent(new KeyboardEvent(type, opts)); }catch(e){}
+  }
+  window.addEventListener('message', function(e){
+    var d = e.data;
+    if(!d || !d.__ppos) return;
+    if(d.type === 'down'){ firePointer('mousedown', d.x, d.y); }
+    else if(d.type === 'up'){
+      firePointer('mouseup', d.x, d.y);
+      firePointer('click', d.x, d.y);
+    }
+    else if(d.type === 'tap'){
+      firePointer('mousedown', d.x, d.y);
+      firePointer('mouseup', d.x, d.y);
+      firePointer('click', d.x, d.y);
+    }
+    else if(d.type === 'key'){
+      var t = document.activeElement || document.body;
+      if(t && t.value !== undefined && d.key.length === 1){
+        t.value += d.key;
+        t.dispatchEvent(new Event('input', {bubbles:true}));
+      }
+      fireKey(d.key, 'keydown');
+      fireKey(d.key, 'keyup');
+    }
+    else if(d.type === 'backspace'){
+      var tb = document.activeElement || document.body;
+      if(tb && tb.value !== undefined){
+        tb.value = tb.value.slice(0,-1);
+        tb.dispatchEvent(new Event('input', {bubbles:true}));
+      }
+      fireKey('Backspace', 'keydown');
+      fireKey('Backspace', 'keyup');
+    }
+    else if(d.type === 'enter'){
+      fireKey('Enter', 'keydown');
+      fireKey('Enter', 'keyup');
+    }
+  });
+})();
+<\/script>`;
+
+function buildSandboxedHTML(game){
+  let html = game.html || '<!DOCTYPE html><html><body>Empty</body></html>';
+  // Inline assets
+  const assets = game.assets || {};
+  for(const path in assets){
+    const dataUrl = assets[path];
+    const safe = escapeRegExp(path);
+    html = html.replace(new RegExp(safe, 'g'), dataUrl);
+  }
+  // Inject virtual input shim before </head> or at start of <body>
+  if(/<\/head>/i.test(html)){
+    html = html.replace(/<\/head>/i, VIRTUAL_INPUT_SCRIPT + '</head>');
+  } else if(/<body[^>]*>/i.test(html)){
+    html = html.replace(/<body([^>]*)>/i, '<body$1>' + VIRTUAL_INPUT_SCRIPT);
+  } else {
+    html = VIRTUAL_INPUT_SCRIPT + html;
+  }
+  return html;
+}
+
+function launchGame(gameId){
+  const game = state.games.find(g=>g.id===gameId);
+  if(!game) return;
+  document.getElementById('game-overlay').classList.remove('hidden');
+  document.getElementById('game-title').textContent = game.name || 'Game';
+  const frame = document.getElementById('game-frame');
+  frame.srcdoc = buildSandboxedHTML(game);
+  initVirtualInput();
+}
+
+function closeGame(){
+  document.getElementById('game-overlay').classList.add('hidden');
+  document.getElementById('game-frame').srcdoc = '';
+  hideVKeyboard();
+  document.getElementById('v-cursor').classList.add('hidden');
+}
+
+function removeGame(id){
+  if(!confirm('Удалить игру?')) return;
+  state.games = state.games.filter(g=>g.id!==id);
+  save(); openApp('installer');
+}
+
+/* ============================================================
+   VIRTUAL INPUT (cursor + keyboard)
+   ============================================================ */
+let cursorX = 0, cursorY = 0;
+let cursorVisible = false;
+
+function initVirtualInput(){
+  const stage = document.getElementById('game-stage');
+  const cursor = document.getElementById('v-cursor');
+  cursorX = stage.clientWidth / 2;
+  cursorY = stage.clientHeight / 2;
+  updateCursor();
+  cursor.classList.toggle('hidden', !(state.vcursor && cursorVisible));
+
+  stage.onpointerdown = null;
+  stage.onpointermove = null;
+  stage.onpointerup = null;
+
+  // Touch / mouse drag handler
+  let dragging = false;
+  const onDown = (e)=>{
+    if(!state.vcursor) return;
+    if(e.target.closest('#v-keyboard')) return;
+    dragging = true;
+    cursorVisible = true;
+    cursor.classList.remove('hidden');
+    const r = stage.getBoundingClientRect();
+    cursorX = e.clientX - r.left;
+    cursorY = e.clientY - r.top;
+    updateCursor();
+    e.preventDefault();
+  };
+  const onMove = (e)=>{
+    if(!dragging) return;
+    const r = stage.getBoundingClientRect();
+    cursorX = Math.max(0, Math.min(r.width, e.clientX - r.left));
+    cursorY = Math.max(0, Math.min(r.height, e.clientY - r.top));
+    updateCursor();
+    e.preventDefault();
+  };
+  const onUp = (e)=>{
+    if(!dragging) return;
+    dragging = false;
+    sendToGame({__ppos:true, type:'tap', x: Math.round(cursorX), y: Math.round(cursorY)});
+    e.preventDefault();
+  };
+  stage.addEventListener('pointerdown', onDown);
+  stage.addEventListener('pointermove', onMove);
+  stage.addEventListener('pointerup', onUp);
+  stage.addEventListener('pointercancel', onUp);
+
+  // Cursor toggle button
+  const btn = document.getElementById('game-cursor-toggle');
+  btn.classList.toggle('on', state.vcursor);
+  btn.onclick = ()=>{
+    state.vcursor = !state.vcursor;
+    btn.classList.toggle('on', state.vcursor);
+    if(!state.vcursor) cursor.classList.add('hidden');
+    else if(cursorVisible) cursor.classList.remove('hidden');
+    save();
+  };
+
+  // Keyboard toggle
+  const kbBtn = document.getElementById('game-kb-toggle');
+  kbBtn.classList.toggle('on', !document.getElementById('v-keyboard').classList.contains('hidden'));
+  kbBtn.onclick = ()=>{
+    const kb = document.getElementById('v-keyboard');
+    if(kb.classList.contains('hidden')) showVKeyboard();
+    else hideVKeyboard();
+    kbBtn.classList.toggle('on', !kb.classList.contains('hidden'));
+  };
+}
+
+function updateCursor(){
+  const c = document.getElementById('v-cursor');
+  c.style.left = cursorX + 'px';
+  c.style.top  = cursorY + 'px';
+}
+
+function sendToGame(msg){
+  const frame = document.getElementById('game-frame');
+  if(frame.contentWindow) frame.contentWindow.postMessage(msg, '*');
+}
+
+/* --- Virtual Keyboard --- */
+const KB_ROWS = [
+  ['1','2','3','4','5','6','7','8','9','0'],
+  ['q','w','e','r','t','y','u','i','o','p'],
+  ['a','s','d','f','g','h','j','k','l','⌫'],
+  ['z','x','c','v','b','n','m',',','.','⏎'],
+  ['SHIFT','  ПРОБЕЛ  ','ESC']
+];
+
+function showVKeyboard(){
+  const kb = document.getElementById('v-keyboard');
+  kb.classList.remove('hidden');
+  const keys = [
+    ...['1','2','3','4','5','6','7','8','9','0'],
+    ...['q','w','e','r','t','y','u','i','o','p'],
+    ...['a','s','d','f','g','h','j','k','l','⌫'],
+    ...['z','x','c','v','b','n','m',',','.','⏎'],
+    '__SPACE__','__ESC__'
+  ];
+  kb.innerHTML = keys.map(k=>{
+    if(k === '__SPACE__') return `<div class="vk space" data-k=" ">ПРОБЕЛ</div>`;
+    if(k === '__ESC__') return `<div class="vk wide" data-k="Escape">ESC</div>`;
+    if(k === '⌫') return `<div class="vk back" data-k="BACKSPACE">⌫</div>`;
+    if(k === '⏎') return `<div class="vk enter" data-k="ENTER">⏎</div>`;
+    return `<div class="vk" data-k="${esc(k)}">${esc(k)}</div>`;
+  }).join('');
+  kb.querySelectorAll('.vk').forEach(el=>{
+    el.addEventListener('pointerdown', (e)=>{
+      e.stopPropagation();
+      e.preventDefault();
+      const k = el.dataset.k;
+      if(k === 'BACKSPACE') sendToGame({__ppos:true, type:'backspace'});
+      else if(k === 'ENTER') sendToGame({__ppos:true, type:'enter'});
+      else if(k === 'Escape'){ sendToGame({__ppos:true, type:'key', key:'Escape'}); }
+      else if(k === ' ') sendToGame({__ppos:true, type:'key', key:' '});
+      else sendToGame({__ppos:true, type:'key', key:k});
+    });
+  });
+}
+function hideVKeyboard(){
+  document.getElementById('v-keyboard').classList.add('hidden');
+}
+
+/* ============================================================
+   GLOBAL OS API (for inline onclick)
+   ============================================================ */
+window.OS = {
+  killTask,
+  fmUp, fmNewFile, fmOpen, fmSave, fmDelete,
+  launchGame, removeGame,
+  openApp, closeApp, closeGame,
+};
+
+/* ============================================================
+   INPUT (keyboard navigation)
+   ============================================================ */
+document.addEventListener('keydown', (e)=>{
+  if(!document.getElementById('app-overlay').classList.contains('hidden')) {
+    if(e.key === 'Escape') closeApp();
+    return;
+  }
+  if(!document.getElementById('game-overlay').classList.contains('hidden')){
+    if(e.key === 'Escape') closeGame();
+    return;
+  }
+  const cats = getCategories();
+  const items = getItems(cats[state.cat].id);
+  if(e.key === 'ArrowLeft'){ state.cat = (state.cat - 1 + cats.length) % cats.length; state.item = 0; renderXMB(); e.preventDefault(); }
+  else if(e.key === 'ArrowRight'){ state.cat = (state.cat + 1) % cats.length; state.item = 0; renderXMB(); e.preventDefault(); }
+  else if(e.key === 'ArrowUp'){ state.item = Math.max(0, state.item - 1); renderXMB(); e.preventDefault(); }
+  else if(e.key === 'ArrowDown'){ state.item = Math.min(items.length - 1, state.item + 1); renderXMB(); e.preventDefault(); }
+  else if(e.key === 'Enter'){ if(items[state.item]) activateItem(cats[state.cat].id, items[state.item]); e.preventDefault(); }
+});
+
+/* ============================================================
+   RESIZE / ORIENTATION / CLOCK
+   ============================================================ */
+function updateClock(){
+  const d = new Date();
+  const el = document.getElementById('clock');
+  if(el) el.textContent = d.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
+}
+function checkOrientation(){
+  const isPortrait = window.innerHeight > window.innerWidth;
+  const isTouch = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+  const rotate = document.getElementById('rotate');
+  if(isPortrait && isTouch && window.innerWidth < 900){
+    rotate.classList.remove('hidden');
+  } else {
+    rotate.classList.add('hidden');
+  }
+}
+window.addEventListener('resize', ()=>{ renderXMB(); checkOrientation(); });
+
+/* ============================================================
+   BOOT SEQUENCE
+   ============================================================ */
+function boot(){
+  load();
+  const progress = document.getElementById('boot-progress');
+  let p = 0;
+  const iv = setInterval(()=>{
+    p += 6 + Math.random() * 10;
+    if(p > 100) p = 100;
+    progress.style.width = p + '%';
+    if(p >= 100){
+      clearInterval(iv);
+      setTimeout(()=>{
+        document.getElementById('boot').classList.add('hidden');
+        document.getElementById('main').classList.remove('hidden');
+        renderXMB();
+        updateClock();
+        setInterval(updateClock, 1000);
+        checkOrientation();
+      }, 350);
+    }
+  }, 130);
+}
+
+/* ============================================================
+   EVENT BINDINGS
+   ============================================================ */
+document.getElementById('app-back').addEventListener('click', closeApp);
+document.getElementById('game-back').addEventListener('click', closeGame);
+
+/* Save on unload */
+window.addEventListener('beforeunload', save);
+
+/* Reopen games after resize */
+window.addEventListener('resize', ()=>{
+  if(!document.getElementById('game-overlay').classList.contains('hidden')){
+    updateCursor();
+  }
+});
+
+/* START */
+boot();
+</script>
+</body>
+</html>
